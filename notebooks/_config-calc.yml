@@ -1,15 +1,19 @@
 ###
+# data sources
+data_sources:
+    casename: &casename
+       g.e22.GOMIPECOIAF_JRA-1p4-2018.TL319_g17.4p2z.001
+      #g.e22a06.G1850ECOIAF_JRA_PHYS_DEV.TL319_g17.scope_v1
+
+
+
 # computation config keys
-output_dir: ./_computed-notebooks
+output_root: ./_computed-notebooks
 default_kernel_name: cesm-exp
 project: NCGD0011
 
 
-###
-# data sources
-data_sources:
-    casename: &casename
-      smyle-fosi.regional.lat-range-basin.000
+
 
 ###
 # book table of contents
@@ -17,21 +21,49 @@ book_toc:
   format: jb-book
   root: description
   parts:
+    - caption: Global overview
+      chapters:
+        - file: ocn-global-bgc-metrics
+        
+    - caption: Macronutrients
+      chapters:
+        - file: ocn-macronuts
+        
     - caption: Ocean Carbon Cycle
       chapters:
-        - file: ocn-fgco2
+        - file: ocn-carbonfluxes
+        
+    - caption: Phytoplankton
+      chapters:
+        - file: ocn-phyto-biomass
+        - file: ocn-phyto-prod
+        - file: ocn-phyto-lims
+        - file: ocn-chl
+        
+    - caption: Zooplankton
+      chapters:
+        - file: ocn-zoo
+        
+    - caption: Dissolved iron
+      chapters:
+        - file: ocn-iron      
+        
     - caption: Ocean Tracers
       chapters:
         - file: intro-ocn-tracer-views
           sections:
             - glob: ocn-tracer-views*
+            
+    - caption: Paper Figures
+      chapters:
+        - file: ocn-paperfigs
 
 ###
 # book _config.yml keys
 book_config_keys:
   title: My CESM Experiment
   repository:
-    url: https://github.com/matt-long/my-cesm-experiment
+    url: https://github.com/kristenkrumhardt/my-cesm-experiment
     path_to_book: notebooks
     branch: main
 
@@ -45,7 +77,15 @@ compute_notebooks:
       none:
         casename: *casename
   
-  ocn-fgco2:
+  ocn-carbonfluxes:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+        
+  ocn-global-bgc-metrics:
     use_cluster: True
     parameter_groups:  
       none:
@@ -67,3 +107,70 @@ compute_notebooks:
         variable_id: SALT
       oxygen:
         variable_id: O2
+      dissolved_inorganic_carbon:
+        variable_id: DIC
+
+  ocn-phyto-biomass:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+        
+  ocn-phyto-prod:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+        
+  ocn-chl:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+        
+  ocn-phyto-lims:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+        
+  ocn-zoo:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+        
+  ocn-macronuts:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+        
+  ocn-iron:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+  
+  ocn-paperfigs:
+    use_cluster: True
+    parameter_groups:  
+      none:
+        casename: *casename
+        component: pop
+        stream: h
+  

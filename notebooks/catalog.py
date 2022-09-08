@@ -80,10 +80,12 @@ def to_dataset_dict(case, component, stream, archive_root=None, cdf_kwargs={}):
                         
     dsets = {}
     for case_i, component_i, stream_i in zip(case, component, stream):        
+        print(case_i, component_i, stream_i, archive_root)
         assets = _get_assets(case_i, component_i, stream_i, archive_root)
         key = f'{case_i}.{component_i}.{stream_i}'
         cdf_kwargs = component_cdf_kwargs[component_i]
-        
-        dsets[key] = xr.open_mfdataset(assets[:12], **cdf_kwargs)
-                
+        #dsets[key] = xr.open_mfdataset(assets[:12], **cdf_kwargs)
+        #dsets[key] = xr.open_mfdataset(assets[612:732], **cdf_kwargs)
+        dsets[key] = xr.open_mfdataset(assets[3540:3660], **cdf_kwargs)
+        #dsets[key] = xr.open_mfdataset(assets[-120:], **cdf_kwargs)
     return dsets

@@ -18,7 +18,8 @@ from jinja2 import Template
 import dask
 from dask_jobqueue import PBSCluster
 from dask.distributed import Client
-
+import numpy as np
+import xarray as xr
 
 path_to_here = os.path.dirname(os.path.realpath(__file__))
 
@@ -129,6 +130,7 @@ def get_control_dict():
     with open("_config-calc.yml", "r") as fid:
         control = yaml.safe_load(fid)
 
+    control["output_dir"] = f'{control["output_root"]}/{control["data_sources"]["casename"]}'
     os.makedirs(control["output_dir"], exist_ok=True)
 
     default_kernel_name = control.pop("default_kernel_name", None)
@@ -218,3 +220,69 @@ def get_toc_files(toc_dict, include_glob=True):
         return file_list
 
     return _toc_files(toc_dict)
+
+
+def adjust_pop_grid(tlon,tlat,field):
+    nj = tlon.shape[0]
+    ni = tlon.shape[1]
+    xL = int(ni/2 - 1)
+    xR = int(xL + ni)
+
+    tlon = np.where(np.greater_equal(tlon,min(tlon[:,0])),tlon-360.,tlon)
+    lon  = np.concatenate((tlon,tlon+360.),1)
+    lon = lon[:,xL:xR]
+
+    if ni == 320:
+        lon[367:-3,0] = lon[367:-3,0]+360.
+    lon = lon - 360.
+    lon = np.hstack((lon,lon[:,0:1]+360.))
+    if ni == 320:
+        lon[367:,-1] = lon[367:,-1] - 360.
+
+    #-- trick cartopy into doing the right thing:
+    #   it gets confused when the cyclic coords are identical
+    lon[:,0] = lon[:,0]-1e-8
+    
+    #-- periodicity
+    lat  = np.concatenate((tlat,tlat),1)
+    lat = lat[:,xL:xR]
+    lat = np.hstack((lat,lat[:,0:1]))
+
+    field = np.ma.concatenate((field,field),1)
+    field = field[:,xL:xR]
+    field = np.ma.hstack((field,field[:,0:1]))
+    return lon,lat,field
+
+
+def global_mean(ds, ds_grid, compute_vars, normalize=True, include_ms=False):
+    """
+    Compute the global mean on a POP dataset. 
+    Return computed quantity in conventional units.
+    """
+
+    other_vars = list(set(ds.variables) - set(compute_vars))
+
+    if include_ms: # marginal seas!
+        surface_mask = ds_grid.TAREA.where(ds_grid.KMT > 0).fillna(0.)
+    else:
+        surface_mask = ds_grid.TAREA.where(ds_grid.REGION_MASK > 0).fillna(0.)        
+    
+    masked_area = {
+        v: surface_mask.where(ds[v].notnull()).fillna(0.) 
+        for v in compute_vars
+    }
+    
+    with xr.set_options(keep_attrs=True):
+        
+        dso = xr.Dataset({
+            v: (ds[v] * masked_area[v]).sum(['nlat', 'nlon'])
+            for v in compute_vars
+        })
+        
+        if normalize:
+            dso = xr.Dataset({
+                v: dso[v] / masked_area[v].sum(['nlat', 'nlon'])
+                for v in compute_vars
+            })            
+                
+    return dso
